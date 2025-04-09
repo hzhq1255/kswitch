@@ -14,8 +14,6 @@ clone repository
 mkdir -p ~/.oh-my-zsh/custom/plugins
 git clone https://github.com/hzhq1255/kswtich.git ~/.oh-my-zsh/custom/plugins/kswitch 
 ```
-```
-```
 
 ## Configure
 
@@ -25,8 +23,6 @@ plugins=(
     kswitch
 )
 
-```
-```
 ```
 
 
