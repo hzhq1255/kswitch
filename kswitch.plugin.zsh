@@ -71,7 +71,8 @@ function kswitch() {
     fi
 
     # 执行切换 kubeconfig 的命令
-    kubectl switch-config "$1"
+    rm $HOME/.kube/config
+    ln -s "$HOME/.kube/$file" "$HOME/.kube/config"
     kubectx $(kubectl config current-context) > /dev/null
 
     # 更新 shell 环境
