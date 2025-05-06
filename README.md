@@ -1,4 +1,4 @@
-# Kubectl Swtich Config Tool
+# Kubectl Switch Config Tool
 
 
 ## Require
