@@ -3,7 +3,7 @@
 
 ## Require
 oh-my-zsh
-fzf kubectx kubens
+fzf kubectx kubens kube-ps1
 
 ## Install
 

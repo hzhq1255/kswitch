@@ -9,7 +9,7 @@ function _get_current_kube_config_suffix(){
 }
 
 function _get_current_kswtich_cluster_function() {
-    echo "$(_get_current_kube_config_suffix)/$1"
+    echo "$(_get_current_kube_config_suffix)"
 }
 
 # 使用 fzf 或 select 让用户选择配置文件
