@@ -15,7 +15,7 @@ function _get_current_kswtich_cluster_function() {
 # 使用 fzf 或 select 让用户选择配置文件
 function _select_kube_config() {
     local configs=("${(@f)$(_get_kube_configs)}")
-
+   
     # 如果没有找到任何配置文件，提示用户
     if [[ ${#configs[@]} -eq 0 ]]; then
         echo "No kubeconfig files found in ~/.kube."
@@ -45,7 +45,7 @@ function _select_kube_config() {
 function _sync_kube_context() {
   export KUBE_PS1_CLUSTER_FUNCTION="_get_current_kswtich_cluster_function"
   export KUBE_PS1_CONTEXT=$($KUBE_PS1_CLUSTER_FUNCTION $(kubectl config current-context 2>/dev/null))
-  export KUBE_PS1_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+  export KUBE_PS1_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}' 2>/dev/null)
   export KUBE_PS1_NAMESPACE=${KUBE_PS1_NAMESPACE:-default}
 }
 
@@ -61,7 +61,6 @@ function kswitch() {
         fi
         set -- "$selection"
     fi
-
     local file="config-$1"
 
     # 如果目标 kubeconfig 文件不存在，提示错误
@@ -69,11 +68,17 @@ function kswitch() {
         echo "Kubeconfig file '$HOME/.kube/$file' does not exist."
         return 1
     fi
+    if ! readlink "$HOME/.kube/config" >/dev/null; then
+        echo "Config not smlink file backup it."
+        mv -f "$HOME/.kube/config" "$HOME/.kube/config.bak"
+    fi
 
     # 检查是否已经在使用该配置
     if [ -L "$HOME/.kube/config" ]; then
         local target=$(readlink -f "$HOME/.kube/config")
-        target="$(basename ${target})"
+        if [[ -n "${target}" ]];then
+          target="$(basename ${target} 2>/dev/null)"
+        fi
     fi
     if [[ -n "$target" && "$target" == "$file" ]]; then
         echo "Already using $file."
@@ -81,19 +86,18 @@ function kswitch() {
     fi
 
     # 执行切换 kubeconfig 的命令
-    rm $HOME/.kube/config
-    ln -s "$HOME/.kube/$file" "$HOME/.kube/config"
-    kubectx $(kubectl config current-context) > /dev/null
+    #rm $HOME/.kube/config
+    ln -sf "$HOME/.kube/$file" "$HOME/.kube/config"
 
     # 更新 shell 环境
     #export KUBE_PS1_ENABLED=off
     #export KUBE_PS1_ENABLED=on
-    if command -v kube_ps1 > /dev/null 2>&1 ;then
+    #if command -v kube_ps1 > /dev/null 2>&1 ;then
       #source <( kube_ps1 )
       # kubeon && kubeoff
-      export KUBE_PS1_CONTEXT=$(kubectl config current-context)
-      export KUBE_PS1_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
-    fi
+    #  export KUBE_PS1_CONTEXT=$(kubectl config current-context)
+    #  export KUBE_PS1_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+    #fi
     
 }
 
