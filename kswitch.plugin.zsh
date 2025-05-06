@@ -4,6 +4,14 @@ function _get_kube_configs() {
     ls -1 ~/.kube/config-* 2>/dev/null | sed 's|.*/config-||'
 }
 
+function _get_current_kube_config_suffix(){
+    readlink -f "$HOME/.kube/config" | sed 's|.*/config-||'
+}
+
+function _get_current_kswtich_cluster_function() {
+    echo "$(_get_current_kube_config_suffix)/$1"
+}
+
 # 使用 fzf 或 select 让用户选择配置文件
 function _select_kube_config() {
     local configs=("${(@f)$(_get_kube_configs)}")
@@ -33,8 +41,10 @@ function _select_kube_config() {
     fi
 }
 
-function sync_kube_context() {
-  export KUBE_PS1_CONTEXT=$(kubectl config current-context)
+
+function _sync_kube_context() {
+  export KUBE_PS1_CLUSTER_FUNCTION="_get_current_kswtich_cluster_function"
+  export KUBE_PS1_CONTEXT=$($KUBE_PS1_CLUSTER_FUNCTION $(kubectl config current-context 2>/dev/null))
   export KUBE_PS1_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
   export KUBE_PS1_NAMESPACE=${KUBE_PS1_NAMESPACE:-default}
 }
@@ -87,8 +97,11 @@ function kswitch() {
     
 }
 
+
+#PS1='$(kube_ps1)'$PS1
 autoload -Uz add-zsh-hook
-add-zsh-hook precmd sync_kube_context
+add-zsh-hook precmd _sync_kube_context
+#_sync_kube_context
 
 
 # 自动补全函数 _kswitch
