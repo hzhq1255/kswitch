@@ -9,7 +9,8 @@ function _get_current_kube_config_suffix(){
 }
 
 function _get_current_kswtich_cluster_function() {
-    echo "$(_get_current_kube_config_suffix)"
+  echo "$(_get_current_kube_config_suffix)"
+  #echo "$(_get_current_kube_config_suffix)/$(kubectl config current-context 2>/dev/null))"
 }
 
 # 使用 fzf 或 select 让用户选择配置文件
@@ -44,6 +45,7 @@ function _select_kube_config() {
 
 function _sync_kube_context() {
   export KUBE_PS1_CLUSTER_FUNCTION="_get_current_kswtich_cluster_function"
+  export KUBE_PS1_CLUSTER=$($KUBE_PS1_CLUSTER_FUNCTION)
   export KUBE_PS1_CONTEXT=$($KUBE_PS1_CLUSTER_FUNCTION $(kubectl config current-context 2>/dev/null))
   export KUBE_PS1_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}' 2>/dev/null)
   export KUBE_PS1_NAMESPACE=${KUBE_PS1_NAMESPACE:-default}
