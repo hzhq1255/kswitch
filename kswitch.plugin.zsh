@@ -5,7 +5,8 @@ function _get_kube_configs() {
 }
 
 function _get_current_kube_config_suffix(){
-    readlink -f "$HOME/.kube/config" | sed 's|.*/config-||'
+    
+    readlink -f "${KUBECONFIG:-$HOME/.kube/config}" | sed 's|.*/config-||'
 }
 
 function _get_current_kswtich_cluster_function() {
