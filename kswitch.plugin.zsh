@@ -53,7 +53,17 @@ function _sync_kube_context() {
 }
 
 # kswitch 函数：用于切换 kubeconfig 配置
+# -e / --env: 通过设置 KUBECONFIG 环境变量切换，仅影响当前会话
 function kswitch() {
+    local use_env=0
+    while [[ "$1" == -* ]]; do
+        case "$1" in
+            -e|--env) use_env=1; shift ;;
+            -h|--help) echo "用法: kswitch [-e] [name]"; echo "  -e  通过 KUBECONFIG 环境变量切换（仅当前会话）"; return 0 ;;
+            *) echo "未知选项: $1"; return 1 ;;
+        esac
+    done
+
     # 如果没有参数，则调用通用的选择逻辑
     if [[ -z "$1" ]]; then
         local selection=$(_select_kube_config)
@@ -71,8 +81,16 @@ function kswitch() {
         echo "Kubeconfig file '$HOME/.kube/$file' does not exist."
         return 1
     fi
+
+    if (( use_env )); then
+        export KUBECONFIG="$HOME/.kube/$file"
+        echo "Switched (env): $1"
+        return 0
+    fi
+
+    # 软链模式
     if ! readlink "$HOME/.kube/config" >/dev/null; then
-        echo "Config not smlink file backup it."
+        echo "Config not symlink file, backup it."
         mv -f "$HOME/.kube/config" "$HOME/.kube/config.bak"
     fi
 
@@ -89,19 +107,7 @@ function kswitch() {
     fi
 
     # 执行切换 kubeconfig 的命令
-    #rm $HOME/.kube/config
     ln -sf "$HOME/.kube/$file" "$HOME/.kube/config"
-
-    # 更新 shell 环境
-    #export KUBE_PS1_ENABLED=off
-    #export KUBE_PS1_ENABLED=on
-    #if command -v kube_ps1 > /dev/null 2>&1 ;then
-      #source <( kube_ps1 )
-      # kubeon && kubeoff
-    #  export KUBE_PS1_CONTEXT=$(kubectl config current-context)
-    #  export KUBE_PS1_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
-    #fi
-    
 }
 
 
@@ -124,7 +130,11 @@ _kswitch() {
     if [[ ${#words[*]} -gt 1 ]];then
         lastParam=${words[-1]}
     fi
-    #lastChar=${lastParam[-1]}
+
+    # 跳过 -e / --env 选项，补全 kubeconfig 名称
+    if [[ "$lastParam" == -e || "$lastParam" == --env ]]; then
+        lastParam=""
+    fi
 
     # 获取前缀（当前参数的值）
     prefix="${lastParam}"
@@ -145,7 +155,6 @@ _kswitch() {
     if command -v fzf >/dev/null 2>&1; then
         local selection=$(printf '%s\n' "${completions[@]}" | fzf --no-multi --query="$prefix")
         if [[ -n "$selection" ]]; then
-            #print -z "$selection"
             compadd "$selection"
             return 0
         fi
